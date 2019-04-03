@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: |-
+  This is my first cloudformation template
+    Refs:
+      - https://dev.classmethod.jp/cloud/aws/cloudformation-beginner01/
+      - https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/template-anatomy.html#w2ab2c17c15b9
+# Metadata:
+Parameters:
+  PROJECT:
+    Type: String
+    Default: "Getting Started CFn"
+  CREATEDBY:
+    Type: String
+    Default: "yuto"
+    Description: "who created this resource?"
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      Tags:
+        - Key: Name
+          Value: !Sub ${PROJECT}-vpc
+        - Key: CREATED_AT
+          Value: "2019-04-03"
+        - Key: CREATE_BY
+          Value: !Ref CREATEDBY
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+  MyAttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref MyInternetGateway
+  MyFrontendRouteTable:
+    Type: AWS::EC2::RouteTable
+    DependsOn: MyAttachGateway
+    Properties:
+      VpcId: !Ref MyVPC
+  MyFrontendRoute:
+    Type: AWS::EC2::Route
+    DependsOn: MyFrontendRouteTable
+    Properties:
+      RouteTableId: !Ref MyFrontendRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref MyInternetGateway
+  MyFrontendSubnet:
+    Type: AWS::EC2::Subnet
+    DependsOn: MyAttachGateway
+    Properties:
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: "true"
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: "Name"
+          Value: !Sub ${PROJECT}-subnet
+  MyFrontendSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyFrontendSubnet
+      RouteTableId: !Ref MyFrontendRouteTable
